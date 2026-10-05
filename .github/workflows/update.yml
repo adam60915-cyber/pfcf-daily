@@ -1,0 +1,55 @@
+name: 每日更新盤後資料
+
+on:
+  schedule:
+    - cron: "30 9-14 * * 1-5"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 安裝套件
+
+        run: pip install requests beautifulsoup4 pymupdf
+
+      - name: 抓取官網最新資料
+        run: python fetch_report.py
+
+      - name: 有新資料就存檔
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add docs/data
+          git diff --cached --quiet || git commit -m "更新盤後資料 $(date -u +%F)"
+          git push
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: 發佈網頁
+        id: deploy
+        uses: actions/deploy-pages@v4
