@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>每日期權盤後資料</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #13233F;
+    --ink-soft: #5A6B85;
+    --paper: #EDF1F5;
+    --sheet: #FFFFFF;
+    --rule: #CAD4DF;
+    --up: #C8102E;
+    --font: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    --num: "Barlow Condensed", "Arial Narrow", sans-serif;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #E4EAF2; --ink-soft: #93A3BA; --paper: #0F1A2C; --sheet: #FFFFFF; --rule: #2A3A55;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #E4EAF2; --ink-soft: #93A3BA; --paper: #0F1A2C; --sheet: #FFFFFF; --rule: #2A3A55;
+  }
+  *, *::before, *::after { box-sizing: inherit; }
+  html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 64px); }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font); line-height: 1.6; }
+
+  header { max-width: 960px; margin: 0 auto; padding: 28px 20px 18px; }
+  .title { font-size: 1rem; font-weight: 500; color: var(--ink-soft); margin: 0; }
+  .date {
+    font-family: var(--num); font-weight: 600; font-size: clamp(3rem, 12vw, 5.5rem);
+    line-height: 1; letter-spacing: -0.01em; margin: 6px 0 10px;
+    border-left: 6px solid var(--up); padding-left: 14px;
+  }
+  .date small { font-family: var(--font); font-size: 0.32em; font-weight: 500; color: var(--ink-soft); margin-left: 10px; }
+  .meta { font-size: 0.875rem; color: var(--ink-soft); margin: 0; }
+
+  nav {
+    position: sticky; top: 0; z-index: 5; background: var(--paper);
+    padding-top: env(safe-area-inset-top, 0px);
+    border-bottom: 1px solid var(--rule);
+  }
+  .rail { max-width: 960px; margin: 0 auto; display: flex; gap: 6px; overflow-x: auto; padding: 10px 20px; scrollbar-width: none; }
+  .rail::-webkit-scrollbar { display: none; }
+  .rail a {
+    flex: 0 0 auto; min-width: 40px; height: 40px; display: grid; place-items: center;
+    font-family: var(--num); font-size: 1.15rem; font-weight: 500;
+    color: var(--ink); text-decoration: none; border: 1px solid var(--rule); border-radius: 4px;
+  }
+  .rail a:hover, .rail a:focus-visible { border-color: var(--ink); outline: none; }
+
+  main { max-width: 960px; margin: 0 auto; padding: 20px 12px 48px; }
+  figure { margin: 0 0 22px; }
+  figure a { display: block; background: var(--sheet); border-radius: 2px; box-shadow: 0 1px 0 var(--rule); }
+  figure a:focus-visible { outline: 3px solid var(--up); outline-offset: 3px; }
+  figure img { display: block; width: 100%; height: auto; }
+  figcaption { font-family: var(--num); font-size: 1rem; color: var(--ink-soft); padding: 6px 4px 0; }
+
+  .notice { padding: 40px 20px; text-align: center; color: var(--ink-soft); }
+  footer { max-width: 960px; margin: 0 auto; padding: 0 20px 40px; font-size: 0.8rem; color: var(--ink-soft); }
+  footer a { color: inherit; }
+</style>
+</head>
+<body>
+<header>
+  <p class="title">統一期貨 ‧ 每日期權盤後資料</p>
+  <div class="date" id="date">載入中</div>
+  <p class="meta" id="meta"></p>
+</header>
+<nav aria-label="跳到第幾張"><div class="rail" id="rail"></div></nav>
+<main id="list"><p class="notice">正在讀取最新資料…</p></main>
+<footer>資料來源：<a href="https://www.pfcf.com.tw/report/l/24" target="_blank" rel="noopener">統一期貨 每日數據大整理</a>。點圖片可開啟原圖放大。</footer>
+
+<script>
+(async () => {
+  const $ = id => document.getElementById(id);
+  try {
+    const res = await fetch("data/latest.json?t=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) throw new Error(res.status);
+    const d = await res.json();
+
+    const dt = new Date(d.date + "T00:00:00+08:00");
+    const wk = "日一二三四五六"[dt.getDay()];
+    $("date").innerHTML = d.date.replaceAll("-", "/") + "<small>星期" + wk + "</small>";
+    $("meta").textContent = "共 " + d.pages.length + " 張圖　更新於 " + d.updated_at;
+    document.title = "每日期權盤後資料 " + d.date;
+
+    const v = "?v=" + encodeURIComponent(d.roc_date);   // 換日後強制載入新圖
+    $("rail").innerHTML = d.pages.map((_, i) => `<a href="#p${i + 1}">${i + 1}</a>`).join("");
+    $("list").innerHTML = d.pages.map((src, i) => `
+      <figure id="p${i + 1}">
+        <a href="${src + v}" target="_blank" rel="noopener" aria-label="開啟第 ${i + 1} 張原圖">
+          <img src="${src + v}" alt="第 ${i + 1} 張盤後資料圖" loading="${i < 2 ? "eager" : "lazy"}">
+        </a>
+        <figcaption>${i + 1} / ${d.pages.length}</figcaption>
+      </figure>`).join("");
+  } catch (e) {
+    $("date").textContent = "暫無資料";
+    $("list").innerHTML = '<p class="notice">目前讀不到資料。請稍後重新整理，或直接前往下方統一期貨官網查看。</p>';
+  }
+})();
+</script>
+</body>
+</html>
