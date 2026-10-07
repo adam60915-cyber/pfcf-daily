@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>每日期權盤後資料</title>
+<title>每日盤後數據</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,8 +30,9 @@
   :root[data-theme="dark"] {
     --ink: #E4EAF2; --ink-soft: #93A3BA; --paper: #0F1A2C; --sheet: #FFFFFF; --rule: #2A3A55;
   }
+
   *, *::before, *::after { box-sizing: inherit; }
-  html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 64px); }
+  html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); }
   body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font); line-height: 1.6; }
 
   header { max-width: 960px; margin: 0 auto; padding: 28px 20px 18px; }
@@ -58,6 +59,19 @@
   }
   .rail a:hover, .rail a:focus-visible { border-color: var(--ink); outline: none; }
 
+  .rail .group { flex: 0 0 auto; display: flex; gap: 6px; align-items: center; }
+  .rail .group + .group { margin-left: 8px; padding-left: 12px; border-left: 1px solid var(--rule); }
+  .rail a.label { font-family: var(--font); font-size: 0.875rem; font-weight: 700; padding: 0 12px; background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+
+  section { margin-bottom: 36px; }
+  section h2 {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px;
+    font-size: 1.15rem; font-weight: 700; margin: 0 4px 12px; padding-bottom: 8px; border-bottom: 2px solid var(--ink);
+  }
+  section h2 .d { font-family: var(--num); font-weight: 500; font-size: 1.1rem; color: var(--ink-soft); }
+  section h2 .stale { font-size: 0.8rem; font-weight: 500; color: var(--up); }
+
   main { max-width: 960px; margin: 0 auto; padding: 20px 12px 48px; }
   figure { margin: 0 0 22px; }
   figure a { display: block; background: var(--sheet); border-radius: 2px; box-shadow: 0 1px 0 var(--rule); }
@@ -72,7 +86,7 @@
 </head>
 <body>
 <header>
-  <p class="title">統一期貨 ‧ 每日期權盤後資料</p>
+  <p class="title">統一期貨 ‧ 每日盤後數據</p>
   <div class="date" id="date">載入中</div>
   <p class="meta" id="meta"></p>
 </header>
@@ -82,27 +96,46 @@
 
 <script>
 (async () => {
+
   const $ = id => document.getElementById(id);
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const fmt = d => d.replaceAll("-", "/");
   try {
     const res = await fetch("data/latest.json?t=" + Date.now(), { cache: "no-store" });
     if (!res.ok) throw new Error(res.status);
-    const d = await res.json();
+    const data = await res.json();
+    const reports = data.reports || [];
+    if (!reports.length) throw new Error("empty");
 
-    const dt = new Date(d.date + "T00:00:00+08:00");
-    const wk = "日一二三四五六"[dt.getDay()];
-    $("date").innerHTML = d.date.replaceAll("-", "/") + "<small>星期" + wk + "</small>";
-    $("meta").textContent = "共 " + d.pages.length + " 張圖　更新於 " + d.updated_at;
-    document.title = "每日期權盤後資料 " + d.date;
+    const latest = reports.map(r => r.date).sort().pop();
+    const wk = "日一二三四五六"[new Date(latest + "T00:00:00+08:00").getDay()];
+    const total = reports.reduce((n, r) => n + r.pages.length, 0);
+    $("date").innerHTML = fmt(latest) + "<small>星期" + wk + "</small>";
+    $("meta").textContent = reports.length + " 份報告 ‧ 共 " + total + " 張圖　更新於 " + data.updated_at;
+    document.title = "每日盤後數據 " + latest;
 
-    const v = "?v=" + encodeURIComponent(d.roc_date);   // 換日後強制載入新圖
-    $("rail").innerHTML = d.pages.map((_, i) => `<a href="#p${i + 1}">${i + 1}</a>`).join("");
-    $("list").innerHTML = d.pages.map((src, i) => `
-      <figure id="p${i + 1}">
-        <a href="${src + v}" target="_blank" rel="noopener" aria-label="開啟第 ${i + 1} 張原圖">
-          <img src="${src + v}" alt="第 ${i + 1} 張盤後資料圖" loading="${i < 2 ? "eager" : "lazy"}">
-        </a>
-        <figcaption>${i + 1} / ${d.pages.length}</figcaption>
-      </figure>`).join("");
+    $("rail").innerHTML = reports.map(r => {
+      const nums = r.pages.length > 1
+        ? r.pages.map((_, i) => `<a href="#${r.id}-${i + 1}">${i + 1}</a>`).join("") : "";
+      return `<span class="group"><a class="label" href="#${r.id}">${esc(r.short || r.name)}</a>${nums}</span>`;
+    }).join("");
+
+    let eager = 2;
+    $("list").innerHTML = reports.map(r => {
+      const v = "?v=" + encodeURIComponent(r.roc_date);
+      const stale = r.date < latest ? '<span class="stale">今日尚未更新</span>' : "";
+      const figs = r.pages.map((src, i) => {
+        const load = eager-- > 0 ? "eager" : "lazy";
+        const cap = r.pages.length > 1 ? `<figcaption>${i + 1} / ${r.pages.length}</figcaption>` : "";
+        return `<figure id="${r.id}-${i + 1}">
+          <a href="${src + v}" target="_blank" rel="noopener" aria-label="開啟${esc(r.name)}第 ${i + 1} 張原圖">
+
+            <img src="${src + v}" alt="${esc(r.name)} 第 ${i + 1} 張" loading="${load}">
+          </a>${cap}
+        </figure>`;
+      }).join("");
+      return `<section id="${r.id}"><h2>${esc(r.name)}<span class="d">${fmt(r.date)}</span>${stale}</h2>${figs}</section>`;
+    }).join("");
   } catch (e) {
     $("date").textContent = "暫無資料";
     $("list").innerHTML = '<p class="notice">目前讀不到資料。請稍後重新整理，或直接前往下方統一期貨官網查看。</p>';
