@@ -23,7 +23,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
-            - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: main
 
@@ -31,8 +31,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: 安裝套件
 
+      - name: 安裝套件
         run: pip install requests beautifulsoup4 pymupdf
 
       - name: 抓取官網最新資料
@@ -44,7 +44,7 @@ jobs:
           git config user.email "github-actions@users.noreply.github.com"
           git add docs/data
           git diff --cached --quiet || git commit -m "更新盤後資料 $(date -u +%F)"
-          git push          git pull --rebase origin main
+          git pull --rebase origin main
           git push
 
       - uses: actions/configure-pages@v5
