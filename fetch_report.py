@@ -18,15 +18,18 @@ from bs4 import BeautifulSoup
 
 LIST_URL = "https://www.pfcf.com.tw/report/l/24"
 
-# 網頁上的顯示順序 = 這裡的順序
+# 同一組內的顯示順序 = 這裡的順序（網頁會自動把較新的那一組排在上面）
 #   id      ：資料夾名稱（英文，不要重複）
 #   name    ：網頁上顯示的標題
 #   short   ：跳轉列上的簡稱
+#   group   ：分組，填「盤前」或「盤後」
 #   keyword ：官網標題裡一定會出現的文字，用來找出這份報告
 REPORTS = [
-    {"id": "options",    "name": "每日期權盤後資料",     "short": "期權",   "keyword": "每日期權盤後資料"},
-    {"id": "top30",      "name": "股票期貨前30大成交量", "short": "成交量", "keyword": "股票期貨前30大成交量"},
-    {"id": "volatility", "name": "股票期貨波動度排序",   "short": "波動度", "keyword": "股票期貨波動度排序"},
+    {"id": "night",      "name": "夜盤期權籌碼快報",     "short": "夜盤籌碼", "group": "盤前", "keyword": "夜盤期權籌碼快報"},
+    {"id": "morning",    "name": "國內晨間快報",         "short": "晨間快報", "group": "盤前", "keyword": "國內晨間快報"},
+    {"id": "options",    "name": "每日期權盤後資料",     "short": "期權",     "group": "盤後", "keyword": "每日期權盤後資料"},
+    {"id": "top30",      "name": "股票期貨前30大成交量", "short": "成交量",   "group": "盤後", "keyword": "股票期貨前30大成交量"},
+    {"id": "volatility", "name": "股票期貨波動度排序",   "short": "波動度",   "group": "盤後", "keyword": "股票期貨波動度排序"},
 ]
 
 OUT_DIR = Path("docs/data")
@@ -109,6 +112,12 @@ def main():
     result = []
     for rep in REPORTS:
         rid, info, prev = rep["id"], found.get(rep["id"]), old_map.get(rep["id"])
+        meta = {"id": rid, "name": rep["name"], "short": rep["short"], "group": rep["group"]}
+        if prev:
+            merged = {**prev, **meta}
+            if merged != prev:
+                changed = True  # 名稱或分組有改，也要重寫
+            prev = merged
 
         if info is None:
             print(f"::warning::找不到「{rep['keyword']}」，保留上一次的資料。")
@@ -132,7 +141,7 @@ def main():
                 result.append(prev)
             continue
 
-        result.append({**info, "id": rid, "name": rep["name"], "short": rep["short"], "pages": pages})
+        result.append({**info, **meta, "pages": pages})
         changed = True
         print(f"{rep['name']}：完成 {info['date']}，{len(pages)} 張圖")
 
