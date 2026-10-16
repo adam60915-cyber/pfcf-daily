@@ -1,6 +1,32 @@
 {
-  "updated_at": "2026-10-15 17:57",
+  "updated_at": "2026-10-16 15:12",
   "reports": [
+    {
+      "title": "盤前數據_夜盤期權籌碼快報 1151016",
+      "src_url": "https://www.pfcf.com.tw/photo/article/4133/file23799.png",
+      "date": "2026-10-16",
+      "roc_date": "1151016",
+      "id": "night",
+      "name": "夜盤期權籌碼快報",
+      "short": "夜盤籌碼",
+      "group": "盤前",
+      "pages": [
+        "data/night/p01.png"
+      ]
+    },
+    {
+      "title": "盤前晨報_國內晨間快報 1151016",
+      "src_url": "https://www.pfcf.com.tw/photo/article/3596/file23800.png",
+      "date": "2026-10-16",
+      "roc_date": "1151016",
+      "id": "morning",
+      "name": "國內晨間快報",
+      "short": "晨間快報",
+      "group": "盤前",
+      "pages": [
+        "data/morning/p01.png"
+      ]
+    },
     {
       "title": "盤後數據_每日期權盤後資料 1151015",
       "src_url": "https://www.pfcf.com.tw/photo/article/649/file23790.pdf",
@@ -19,7 +45,8 @@
         "data/options/p07.jpg",
         "data/options/p08.jpg",
         "data/options/p09.jpg"
-      ]
+      ],
+      "group": "盤後"
     },
     {
       "title": "盤後數據_股票期貨前30大成交量 1151015",
@@ -31,7 +58,8 @@
       "short": "成交量",
       "pages": [
         "data/top30/p01.png"
-      ]
+      ],
+      "group": "盤後"
     },
     {
       "title": "盤後數據_股票期貨波動度排序 1151015",
@@ -43,7 +71,8 @@
       "short": "波動度",
       "pages": [
         "data/volatility/p01.png"
-      ]
+      ],
+      "group": "盤後"
     }
   ]
 }
