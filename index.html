@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>每日盤後數據</title>
+<title>統一期貨 每日數據</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -62,13 +62,22 @@
   .rail .group + .group { margin-left: 8px; padding-left: 12px; border-left: 1px solid var(--rule); }
   .rail a.label { font-family: var(--font); font-size: 0.875rem; font-weight: 700; padding: 0 12px; background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
+  .grp { margin-bottom: 44px; }
+  .grp > h2 {
+    display: flex; align-items: center; gap: 10px; margin: 0 4px 18px;
+    font-size: 1.35rem; font-weight: 700; letter-spacing: 0.04em;
+  }
+  .grp > h2::before { content: ""; width: 10px; height: 10px; background: var(--up); border-radius: 50%; }
+  .grp > h2 .d { font-family: var(--num); font-weight: 500; font-size: 1.2rem; color: var(--ink-soft); letter-spacing: 0; }
+  .rail .tag { flex: 0 0 auto; font-size: 0.75rem; font-weight: 700; color: var(--ink-soft); padding: 0 2px 0 4px; align-self: center; }
+
   section { margin-bottom: 36px; }
-  section h2 {
+  section h3 {
     display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px;
     font-size: 1.15rem; font-weight: 700; margin: 0 4px 12px; padding-bottom: 8px; border-bottom: 2px solid var(--ink);
   }
-  section h2 .d { font-family: var(--num); font-weight: 500; font-size: 1.1rem; color: var(--ink-soft); }
-  section h2 .stale { font-size: 0.8rem; font-weight: 500; color: var(--up); }
+  section h3 .d { font-family: var(--num); font-weight: 500; font-size: 1.1rem; color: var(--ink-soft); }
+  section h3 .stale { font-size: 0.8rem; font-weight: 500; color: var(--up); }
 
   main { max-width: 960px; margin: 0 auto; padding: 20px 12px 48px; }
   figure { margin: 0 0 22px; }
@@ -84,7 +93,7 @@
 </head>
 <body>
 <header>
-  <p class="title">統一期貨 ‧ 每日盤後數據</p>
+  <p class="title" id="site-title">統一期貨 ‧ 每日數據</p>
   <div class="date" id="date">載入中</div>
   <p class="meta" id="meta"></p>
 </header>
@@ -105,22 +114,38 @@
     if (!reports.length) throw new Error("empty");
 
     const latest = reports.map(r => r.date).sort().pop();
-    const wk = "日一二三四五六"[new Date(latest + "T00:00:00+08:00").getDay()];
+    const [yy, mm, dd] = latest.split("-").map(Number);
+    const wk = "日一二三四五六"[new Date(Date.UTC(yy, mm - 1, dd)).getUTCDay()];
     const total = reports.reduce((n, r) => n + r.pages.length, 0);
     $("date").innerHTML = fmt(latest) + "<small>星期" + wk + "</small>";
     $("meta").textContent = reports.length + " 份報告 ‧ 共 " + total + " 張圖　更新於 " + data.updated_at;
-    document.title = "每日盤後數據 " + latest;
+    const siteTitle = data.site_title || "統一期貨 ‧ 每日數據";
+    $("site-title").textContent = siteTitle;
+    document.title = siteTitle.replace(/^統一期貨\s*‧\s*/, "") + " " + latest;
 
-    $("rail").innerHTML = reports.map(r => {
+    // 依「盤前／盤後」分組；較新的那組排上面，同一天則盤後在上
+    const order = ["盤後", "盤前"];
+    const groups = [];
+    for (const r of reports) {
+      const name = r.group || "盤後";
+      let g = groups.find(x => x.name === name);
+      if (!g) groups.push(g = { name, items: [] });
+      g.items.push(r);
+    }
+    groups.forEach(g => g.latest = g.items.map(r => r.date).sort().pop());
+    groups.sort((a, b) => b.latest.localeCompare(a.latest) || order.indexOf(a.name) - order.indexOf(b.name));
+
+    $("rail").innerHTML = groups.map(g => g.items.map((r, k) => {
+      const tag = k === 0 && groups.length > 1 ? `<span class="tag">${esc(g.name)}</span>` : "";
       const nums = r.pages.length > 1
         ? r.pages.map((_, i) => `<a href="#${r.id}-${i + 1}">${i + 1}</a>`).join("") : "";
-      return `<span class="group"><a class="label" href="#${r.id}">${esc(r.short || r.name)}</a>${nums}</span>`;
-    }).join("");
+      return `<span class="group">${tag}<a class="label" href="#${r.id}">${esc(r.short || r.name)}</a>${nums}</span>`;
+    }).join("")).join("");
 
     let eager = 2;
-    $("list").innerHTML = reports.map(r => {
+    const renderReport = (r, groupLatest) => {
       const v = "?v=" + encodeURIComponent(r.roc_date);
-      const stale = r.date < latest ? '<span class="stale">今日尚未更新</span>' : "";
+      const stale = r.date < groupLatest ? '<span class="stale">尚未更新</span>' : "";
       const figs = r.pages.map((src, i) => {
         const load = eager-- > 0 ? "eager" : "lazy";
         const cap = r.pages.length > 1 ? `<figcaption>${i + 1} / ${r.pages.length}</figcaption>` : "";
@@ -130,8 +155,11 @@
           </a>${cap}
         </figure>`;
       }).join("");
-      return `<section id="${r.id}"><h2>${esc(r.name)}<span class="d">${fmt(r.date)}</span>${stale}</h2>${figs}</section>`;
-    }).join("");
+      return `<section id="${r.id}"><h3>${esc(r.name)}<span class="d">${fmt(r.date)}</span>${stale}</h3>${figs}</section>`;
+    };
+    $("list").innerHTML = groups.map(g =>
+      `<div class="grp"><h2>${esc(g.name)}數據<span class="d">${fmt(g.latest)}</span></h2>${g.items.map(r => renderReport(r, g.latest)).join("")}</div>`
+    ).join("");
   } catch (e) {
     $("date").textContent = "暫無資料";
     $("list").innerHTML = '<p class="notice">目前讀不到資料。請稍後重新整理，或直接前往下方統一期貨官網查看。</p>';
