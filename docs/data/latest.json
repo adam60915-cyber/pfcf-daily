@@ -1,12 +1,12 @@
 {
   "site_title": "統一期貨 ‧ 每日盤後數據",
-  "updated_at": "2026-11-03 18:16",
+  "updated_at": "2026-11-05 02:10",
   "reports": [
     {
-      "title": "盤後數據_每日期權盤後資料 1151103",
-      "src_url": "https://www.pfcf.com.tw/photo/article/649/file23946.pdf",
-      "date": "2026-11-03",
-      "roc_date": "1151103",
+      "title": "盤後數據_每日期權盤後資料 1151104",
+      "src_url": "https://www.pfcf.com.tw/photo/article/649/file23959.pdf",
+      "date": "2026-11-04",
+      "roc_date": "1151104",
       "id": "options",
       "name": "每日期權盤後資料",
       "short": "期權",
@@ -24,10 +24,10 @@
       ]
     },
     {
-      "title": "盤後數據_股票期貨前30大成交量 1151103",
-      "src_url": "https://www.pfcf.com.tw/photo/article/1719/file23949.png",
-      "date": "2026-11-03",
-      "roc_date": "1151103",
+      "title": "盤後數據_股票期貨前30大成交量 1151104",
+      "src_url": "https://www.pfcf.com.tw/photo/article/1719/file23962.png",
+      "date": "2026-11-04",
+      "roc_date": "1151104",
       "id": "top30",
       "name": "股票期貨前30大成交量",
       "short": "成交量",
@@ -37,10 +37,10 @@
       ]
     },
     {
-      "title": "盤後數據_股票期貨波動度排序 1151103",
-      "src_url": "https://www.pfcf.com.tw/photo/article/1798/file23950.png",
-      "date": "2026-11-03",
-      "roc_date": "1151103",
+      "title": "盤後數據_股票期貨波動度排序 1151104",
+      "src_url": "https://www.pfcf.com.tw/photo/article/1798/file23963.png",
+      "date": "2026-11-04",
+      "roc_date": "1151104",
       "id": "volatility",
       "name": "股票期貨波動度排序",
       "short": "波動度",
